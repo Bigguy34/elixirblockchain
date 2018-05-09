@@ -1,13 +1,10 @@
 defmodule RawChainTest do
   use ExUnit.Case
+  use Timex
   doctest RawChain
 
-  test "hashes date, index, previousHash, and data" do
-    assert RawChain.calculateHash(1, "23", "thing", "anotherthing") =="C498E5FE8CB5B7A4DB284120964EED21F9FDDCB5163BDE1E9FD0B12CA0AFF406"
-  end
-
   test "Create a Gensis Chain" do
-    {:index, index, :hash, hash, :previousHash, previousHash, :data, data} = RawChain.createGenesisBlock()
+    { :previousHash, previousHash, :hash, hash, _, _, :index, index, :data, data} = RawChain.createGenesisBlock()
     assert index == 0
     assert hash == "0"
     assert previousHash == "0"
@@ -15,11 +12,23 @@ defmodule RawChainTest do
   end
 
   test "Create new Chain" do
-    [index: index, previousHash: previousHash, data: data, hash: hash] = RawChain.createNewChain()
+    {:ok, agent}= RawChain.startChain()
+    [{:previousHash, previousHash, :hash, hash, _, _, :index, index, :data, data}] = RawChain.getChain(agent)
     assert index == 0
     assert hash == "0"
     assert previousHash == "0"
     assert data == "GENSISBLOCK"
   end
+  
+  test "Add a block to a chain" do
+    {:ok, agent} = RawChain.startChain()
+    RawChain.storeNextBlock(agent, "somedata")
+    [head | tail] = RawChain.getChain(agent)
+    [genesis] = tail
+    assert elem(head,1) == elem(genesis,1)
+    assert elem(head, 7) == 1
+    assert elem(head, 9) == "somedata"
+      
+    end
 
-end
+  end
