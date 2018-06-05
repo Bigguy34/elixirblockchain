@@ -1,6 +1,5 @@
 defmodule RawChain do
   use Agent
-  use Timex
   @moduledoc """
   This is a simple data store for the raw block chain
   """
@@ -8,17 +7,12 @@ defmodule RawChain do
   def storeNextBlock(agent, data) do 
     currentDate = Timex.now 
     previousBlock = getCurrentBlock(agent)
-    previousHash = elem(previousBlock, 1)
-    newIndex = elem(previousBlock, 7) + 1
-    newHash = calculateHash(newIndex, previousHash, currentDate, data)
-    newBlock = createBlock(previousHash, newHash, currentDate, newIndex, data)
+    newIndex = previousBlock.index + 1
+    newHash = calculateHash(newIndex, previousBlock.previousHash, currentDate, data)
+    newBlock = RawBlock.createBlock(previousBlock.previousHash, newHash, currentDate, newIndex, data)
     Agent.update(agent, fn list -> [newBlock | list] end)
   end
   
-  # A helper function for creating a tuple
-  defp createBlock(previousHash, hash, date, index, data) do
-    { :previousHash, previousHash, :hash, hash, :date, date, :index, index,:data, data }
-  end
   
   # function for creating the hash for a new block
   def calculateHash(index, previousHash, timestamp, data) do
@@ -31,14 +25,9 @@ defmodule RawChain do
     Agent.get(agent, fn [head] -> head end)     
   end
   
-  # function for creating a genesis block, which is the first block in the chain
-  def createGenesisBlock() do 
-    createBlock("0", "0", Duration.now, 0, "GENSISBLOCK")
-  end
-  
   # function creating a new chain
   defp createNewChain() do
-    [createGenesisBlock()]
+    [%RawBlock{}]
   end
 
   # function for getting the entire chain
